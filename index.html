@@ -378,8 +378,7 @@
   <div id="countdown">Voting closes November 7 at midnight ET</div>
 </header>
 <nav>
-  <button class="active" onclick="showSection('map', this)">Map</button>
-  <button onclick="showSection('vote', this)">Vote</button>
+  <button class="active" onclick="showSection('map', this)">Home</button>
   <button onclick="showSection('results', this)">Results</button>
   <button onclick="showSection('admin', this)">Admin</button>
 </nav>
@@ -387,10 +386,10 @@
   <div class="carousel-section">
     <div class="carousel-header">
       <h2 id="carousel-house-title">Select a house on the map</h2>
-      <p>Click any pin to view its photos • Tap image for full screen</p>
+      <p>Click any pin or photo to assign it to a category</p>
     </div>
     <div class="main-carousel">
-      <img id="carousel-main" class="carousel-main-img" src="" alt="House photo" onclick="openCurrentLightbox()">
+      <img id="carousel-main" class="carousel-main-img" src="" alt="House photo" onclick="openAssignPanel(currentCarouselHouse?.num)">
       <button class="carousel-nav prev" onclick="carouselPrev()">‹</button>
       <button class="carousel-nav next" onclick="carouselNext()">›</button>
     </div>
@@ -399,41 +398,22 @@
   <div id="map"></div>
   <div class="ghost">👻</div>
 </div>
-<div id="vote-section" class="panel" style="display:none;">
-  <div id="auth">
-    <h2>Cast Your Votes</h2>
-    <p style="margin-bottom:16px; opacity:0.8;">Each household may submit two votes using two different emails.</p>
-    <input id="email" type="email" placeholder="Your email address">
-    <input id="password" type="password" placeholder="Create or enter your password">
-    <button class="btn" onclick="login()">Continue to Vote</button>
-    <p style="font-size:0.85rem; opacity:0.6; margin-top:12px;">Votes are stored securely. Password is only used for this contest.</p>
-  </div>
-  <div id="tracker-area" style="display:none;">
-    <h2>Your Ballot <span id="user-email" style="font-size:1rem; opacity:0.7;"></span></h2>
-    <p style="margin:8px 0 16px; opacity:0.8;">Select a category, then choose a house. You can change your mind before submitting.</p>
-    <div class="tracker" id="tracker"></div>
-    <div id="house-select" style="display:none; margin-top:20px;">
-      <h3 id="voting-for" style="margin-bottom:12px;"></h3>
-      <select id="house-dropdown"></select>
-      <button class="btn" onclick="assignVote()" style="margin-top:12px;">Assign This House</button>
-    </div>
-    <div id="summary" style="display:none; margin-top:28px;">
-      <h3 style="margin-bottom:12px;">Review & Submit</h3>
-      <div id="summary-list" style="margin-bottom:16px;"></div>
-      <button class="btn" onclick="submitVotes()">Submit My Votes</button>
-    </div>
-    <div id="thanks" class="thanks" style="display:none;">
-      <h2>Thank You!</h2>
-      <p style="margin:12px 0 20px; opacity:0.85;">Your votes have been recorded.</p>
-      <button class="btn" onclick="shareBadge()">Share I Voted</button>
-    </div>
+<div id="assign-panel" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:2000; align-items:center; justify-content:center;">
+  <div class="panel" style="max-width:480px; margin:20px;">
+    <h2 id="assign-title">Assign house</h2>
+    <div id="assign-categories" style="margin:16px 0;"></div>
+    <button class="btn secondary" onclick="closeAssignPanel()">Cancel</button>
   </div>
 </div>
-<div id="results-section" class="panel" style="display:none;">
+<div id="tracker-bar" style="position:fixed; bottom:0; left:0; right:0; background:rgba(10,5,5,0.92); backdrop-filter:blur(12px); border-top:1px solid var(--border); padding:12px 16px; z-index:500; display:flex; gap:8px; overflow-x:auto; align-items:center;">
+  <span style="font-weight:600; white-space:nowrap; margin-right:8px;">Your votes:</span>
+  <div id="tracker" style="display:flex; gap:8px;"></div>
+</div>
+<div id="results-section" class="panel" style="display:none; margin-bottom:80px;">
   <h2>Live Results</h2>
   <div id="public-results" style="margin-top:20px;"></div>
 </div>
-<div id="admin-section" class="panel" style="display:none;">
+<div id="admin-section" class="panel" style="display:none; margin-bottom:80px;">
   <h2>Admin Dashboard</h2>
   <input id="admin-pass" type="password" placeholder="Admin password">
   <button class="btn" onclick="adminLogin()" style="margin-top:12px;">Enter</button>
@@ -456,16 +436,16 @@
 const SCRIPT_URL = "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
 const ADMIN_PASSWORD = "bayard2026";
 const CATEGORIES = [
-  "Best Overall Display",
-  "Best Lighting",
-  "Most Creative",
-  "Best Yard",
-  "Best Porch",
-  "Best Theme",
-  "Scariest",
-  "Funniest",
-  "Best Use of Inflatables",
-  "People's Choice"
+  {name: "Most Likely to Be Reported to the HOA", desc: "The most over-the-top display (doubles as best overall)"},
+  {name: "Visible from Space", desc: "So dazzling, the astronauts are taking pictures"},
+  {name: "Most Likely to Raise the Electric Bill", desc: "The house that’s basically its own power plant"},
+  {name: "Grave Mistake", desc: "Funniest tombstone epitaphs"},
+  {name: "Skeleton Crew", desc: "Skeletons caught doing everyday things like grilling, golfing, or yoga"},
+  {name: "Inflatable Overload", desc: "The lawn with the most blow-up chaos"},
+  {name: "The Neighbors Are Concerned", desc: "The display that has everyone asking questions"},
+  {name: "Last-Minute Legend", desc: "Looks like it went up October 30th, and somehow it works"},
+  {name: "Boo-dget Friendly", desc: "Maximum spooky on minimum spending"},
+  {name: "Nightmare on Our Street", desc: "So creepy the trick-or-treaters walk faster"}
 ];
 const HOUSES = [
   {num:"5017", lat:34.0074842, lon:-84.2096983, photos:["IMG_1275.jpg","IMG_1276.jpg","IMG_1277.jpg","IMG_1278.jpg","IMG_1279.jpg","IMG_1280.jpg","IMG_1281.jpg","IMG_1282.jpg"]},
@@ -534,13 +514,15 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19
 }).addTo(map);
 const bounds = [];
+let markers = {};
 HOUSES.forEach(h => {
   const icon = L.divIcon({className:'house-label', html:h.num, iconSize:[36,36], iconAnchor:[18,18]});
   const m = L.marker([h.lat, h.lon], {icon}).addTo(map);
-  m.bindPopup(`<b style="font-size:1.1rem;">${h.num} Dinant Dr</b><br><br><button class="btn" onclick="openGallery('${h.num}')">Full Gallery</button>`);
+  markers[h.num] = m;
+  m.bindPopup(`<b style="font-size:1.1rem;">${h.num} Dinant Dr</b><br><br><button class="btn" onclick="openAssignPanel('${h.num}')">Vote for this house</button>`);
   m.on('click', () => {
     selectHouseOnMap(h.num);
-    if (currentCat) selectHouse(h.num);
+    openAssignPanel(h.num);
   });
   bounds.push([h.lat, h.lon]);
 });
@@ -552,10 +534,85 @@ function showSection(name, btn) {
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
   document.getElementById('map-section').style.display = name==='map' ? 'block' : 'none';
-  document.getElementById('vote-section').style.display = name==='vote' ? 'block' : 'none';
   document.getElementById('results-section').style.display = name==='results' ? 'block' : 'none';
   document.getElementById('admin-section').style.display = name==='admin' ? 'block' : 'none';
   if (name==='results') loadAndRenderResults();
+}
+let currentUser = localStorage.getItem("bayardUser") || null;
+let votes = JSON.parse(localStorage.getItem("bayardVotes") || "{}");
+function openAssignPanel(houseNum) {
+  if (!houseNum) return;
+  const userVotes = (votes[currentUser] || {}).votes || {};
+  const unfinished = CATEGORIES.filter(c => !userVotes[c.name]);
+  if (!unfinished.length) {
+    alert("You have voted in all categories.");
+    return;
+  }
+  document.getElementById('assign-title').textContent = `Assign ${houseNum} to which category?`;
+  const el = document.getElementById('assign-categories');
+  el.innerHTML = unfinished.map(c => `
+    <div class="cat pending" style="margin:8px 0; cursor:pointer;" onclick="assignCategory('${houseNum}', '${c.name}')">
+      <strong>${c.name}</strong><br><span style="font-size:0.85rem; opacity:0.75;">${c.desc}</span>
+    </div>
+  `).join('');
+  document.getElementById('assign-panel').style.display = 'flex';
+}
+function closeAssignPanel() {
+  document.getElementById('assign-panel').style.display = 'none';
+}
+function assignCategory(houseNum, catName) {
+  if (!currentUser) {
+    currentUser = prompt("Enter your email to vote:") || "guest";
+    localStorage.setItem("bayardUser", currentUser);
+    if (!votes[currentUser]) votes[currentUser] = {votes: {}};
+  }
+  if (!votes[currentUser]) votes[currentUser] = {votes: {}};
+  votes[currentUser].votes[catName] = houseNum;
+  localStorage.setItem("bayardVotes", JSON.stringify(votes));
+  closeAssignPanel();
+  renderTracker();
+  updateMarker(houseNum);
+}
+function updateMarker(houseNum) {
+  const m = markers[houseNum];
+  if (m) {
+    m.setIcon(L.divIcon({
+      className: 'house-label',
+      html: houseNum + ' ✓',
+      iconSize: [42, 42],
+      iconAnchor: [21, 21]
+    }));
+    m.getElement().style.background = '#4caf50';
+    m.getElement().style.color = '#fff';
+  }
+}
+function renderTracker() {
+  const el = document.getElementById('tracker');
+  if (!el) return;
+  el.innerHTML = '';
+  const userVotes = (votes[currentUser] || {}).votes || {};
+  CATEGORIES.forEach(cat => {
+    const done = !!userVotes[cat.name];
+    const div = document.createElement('div');
+    div.style.cssText = `
+      display:flex; align-items:center; gap:6px;
+      padding:8px 12px; border-radius:999px; font-size:0.82rem;
+      white-space:nowrap; cursor:default; border:1px solid;
+      ${done 
+        ? 'background:rgba(76,175,80,0.2); border-color:#4caf50; color:#a5d6a7;' 
+        : 'background:rgba(255,255,255,0.05); border-color:rgba(255,255,255,0.2); color:#f5e6d3;'}
+    `;
+    div.innerHTML = `
+      <span style="
+        width:16px; height:16px; border-radius:50%; display:inline-flex;
+        align-items:center; justify-content:center; font-size:0.75rem; font-weight:700;
+        ${done ? 'background:#4caf50; color:#fff;' : 'border:2px solid rgba(255,255,255,0.4);'}
+      ">${done ? '✓' : ''}</span>
+      ${cat.name}
+    `;
+    div.title = cat.desc;
+    el.appendChild(div);
+  });
 }
 function updateCountdown() {
   const now = new Date();
@@ -571,58 +628,29 @@ function updateCountdown() {
 }
 setInterval(updateCountdown, 30000);
 updateCountdown();
-async function login() {
-  const email = document.getElementById('email').value.trim().toLowerCase();
-  const pass = document.getElementById('password').value;
-  if (!email || !pass) return alert("Please enter email and password");
-  // For demo / until Sheets is connected, use localStorage
-  // Once SCRIPT_URL is set, replace this with a fetch to the sheet
-  let stored = JSON.parse(localStorage.getItem("bayardVotes") || "{}");
-  if (!stored[email]) stored[email] = {password: pass, votes: {}};
-  else if (stored[email].password !== pass) return alert("Incorrect password");
-  currentUser = email;
-  votes = stored;
-  document.getElementById('auth').style.display = 'none';
-  document.getElementById('tracker-area').style.display = 'block';
-  document.getElementById('user-email').textContent = "— " + email;
-  renderTracker();
-  localStorage.setItem("bayardVotes", JSON.stringify(votes));
-}
-function renderTracker() {
-  const el = document.getElementById('tracker');
-  el.innerHTML = '';
-  const userVotes = (votes[currentUser] || {}).votes || {};
-  CATEGORIES.forEach(cat => {
-    const done = !!userVotes[cat];
-    const div = document.createElement('div');
-    div.className = 'cat ' + (done ? 'done' : 'pending');
-    div.innerHTML = `${cat}${done ? ' ✓' : ''}`;
-    div.onclick = () => startVote(cat);
-    el.appendChild(div);
+// Old voting functions removed — voting now happens from the map/carousel
+function loadAndRenderResults() {
+  const stored = JSON.parse(localStorage.getItem("bayardVotes") || "{}");
+  const totals = {};
+  CATEGORIES.forEach(c => totals[c.name] = {});
+  Object.values(stored).forEach(u => {
+    Object.entries(u.votes || {}).forEach(([cat, house]) => {
+      totals[cat][house] = (totals[cat][house] || 0) + 1;
+    });
   });
-  const allDone = CATEGORIES.every(c => userVotes[c]);
-  document.getElementById('summary').style.display = allDone ? 'block' : 'none';
-  if (allDone) renderSummary();
-}
-function startVote(cat) {
-  currentCat = cat;
-  document.getElementById('voting-for').textContent = "Voting for: " + cat;
-  document.getElementById('house-select').style.display = 'block';
-  const sel = document.getElementById('house-dropdown');
-  sel.innerHTML = '<option value="">Select a house…</option>' + HOUSES.map(h => `<option value="${h.num}">${h.num} Dinant Dr</option>`).join('');
-}
-function selectHouse(num) {
-  if (!currentCat || !currentUser) return;
-  if (!votes[currentUser]) votes[currentUser] = {votes:{}};
-  votes[currentUser].votes[currentCat] = num;
-  localStorage.setItem("bayardVotes", JSON.stringify(votes));
-  currentCat = null;
-  document.getElementById('house-select').style.display = 'none';
-  renderTracker();
-}
-function assignVote() {
-  const num = document.getElementById('house-dropdown').value;
-  if (num) selectHouse(num);
+  let html = '';
+  CATEGORIES.forEach(cat => {
+    const entries = Object.entries(totals[cat.name]).sort((a,b)=>b[1]-a[1]);
+    html += `<h3 style="margin:24px 0 12px; font-family:'Playfair Display',serif;">${cat.name}</h3><p style="opacity:0.7; margin-bottom:8px;">${cat.desc}</p>`;
+    if (!entries.length) html += '<p style="opacity:0.6;">No votes yet</p>';
+    else {
+      const max = Math.max(...entries.map(e=>e[1]), 1);
+      entries.forEach(([house, count]) => {
+        html += `<div class="item"><span style="width:80px; font-weight:600;">${house}</span><div class="bar-wrap"><div class="bar" style="width:${(count/max)*100}%"></div></div><span>${count}</span></div>`;
+      });
+    }
+  });
+  document.getElementById('public-results').innerHTML = html;
 }
 function renderSummary() {
   const el = document.getElementById('summary-list');
@@ -695,6 +723,7 @@ function exportVotes() {
   a.click();
 }
 showSection('map');
+renderTracker();
 </script>
 </body>
 </html>
