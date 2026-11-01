@@ -20,7 +20,7 @@
     font-family: 'Inter', system-ui, sans-serif;
     background: var(--dark);
     color: #f5e6d3;
-    padding-bottom: 100px;
+    padding-bottom: 160px;
     overflow-x: hidden;
   }
   body::before {
@@ -83,19 +83,22 @@
     background: rgba(10, 5, 8, 0.95);
     backdrop-filter: blur(12px);
     border-top: 1px solid rgba(255,107,0,0.4);
-    padding: 12px 14px;
+    padding: 16px 14px 20px;
     display: flex;
-    gap: 10px;
-    overflow-x: auto;
+    flex-wrap: wrap;
+    gap: 10px 8px;
     z-index: 500;
-    align-items: center;
+    align-items: flex-start;
+    min-height: 120px;
+    max-height: 180px;
+    overflow-y: auto;
     box-shadow: 0 -8px 30px rgba(0,0,0,0.6);
   }
   .cat-pill {
     flex: 0 0 auto;
-    padding: 8px 14px;
+    padding: 10px 16px;
     border-radius: 999px;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 500;
     border: 1px solid rgba(255,255,255,0.15);
     white-space: nowrap;
@@ -232,7 +235,11 @@
 <div id="modal" class="modal" onclick="if(event.target===this) closeModal()">
   <div class="modal-content">
     <h2 id="modal-title">House</h2>
-    <div class="photos" id="modal-photos"></div>
+    <img id="carousel-main" class="carousel-main" src="" alt="House photo" onclick="openLightbox()">
+    <div class="carousel-nav">
+      <button onclick="carouselPrev()">‹</button>
+      <button onclick="carouselNext()">›</button>
+    </div>
     <p style="margin-bottom:12px; font-size:0.95rem; opacity:0.9;">Which category does this house win?</p>
     <div id="modal-categories"></div>
     <button class="btn" onclick="closeModal()">Cancel</button>
@@ -290,12 +297,15 @@ HOUSES.forEach(h => {
 });
 map.fitBounds(bounds, {padding:[30,30]});
 
+let currentHouse = null;
+let carouselIndex = 0;
+let lbIndex = 0;
+
 function openHouse(h) {
+  currentHouse = h;
+  carouselIndex = 0;
   document.getElementById('modal-title').textContent = h.num + " Dinant Dr";
-  const photosEl = document.getElementById('modal-photos');
-  photosEl.innerHTML = h.photos.length
-    ? h.photos.map(p => `<img src="${p}" alt="${h.num}">`).join('')
-    : '<p style="opacity:0.6;">No photos yet</p>';
+  updateCarousel();
   const catsEl = document.getElementById('modal-categories');
   const used = new Set(Object.values(votes));
   catsEl.innerHTML = CATEGORIES.map(c => {
@@ -310,6 +320,42 @@ function openHouse(h) {
     el.onclick = () => vote(el.dataset.house, el.dataset.cat);
   });
   document.getElementById('modal').style.display = 'flex';
+}
+function updateCarousel() {
+  if (!currentHouse || !currentHouse.photos.length) {
+    document.getElementById('carousel-main').src = '';
+    return;
+  }
+  document.getElementById('carousel-main').src = currentHouse.photos[carouselIndex];
+}
+function carouselNext() {
+  if (!currentHouse || !currentHouse.photos.length) return;
+  carouselIndex = (carouselIndex + 1) % currentHouse.photos.length;
+  updateCarousel();
+}
+function carouselPrev() {
+  if (!currentHouse || !currentHouse.photos.length) return;
+  carouselIndex = (carouselIndex - 1 + currentHouse.photos.length) % currentHouse.photos.length;
+  updateCarousel();
+}
+function openLightbox() {
+  if (!currentHouse || !currentHouse.photos.length) return;
+  lbIndex = carouselIndex;
+  document.getElementById('lb-img').src = currentHouse.photos[lbIndex];
+  document.getElementById('lightbox').style.display = 'flex';
+}
+function lbNext() {
+  if (!currentHouse) return;
+  lbIndex = (lbIndex + 1) % currentHouse.photos.length;
+  document.getElementById('lb-img').src = currentHouse.photos[lbIndex];
+}
+function lbPrev() {
+  if (!currentHouse) return;
+  lbIndex = (lbIndex - 1 + currentHouse.photos.length) % currentHouse.photos.length;
+  document.getElementById('lb-img').src = currentHouse.photos[lbIndex];
+}
+function closeLightbox() {
+  document.getElementById('lightbox').style.display = 'none';
 }
 function closeModal() {
   document.getElementById('modal').style.display = 'none';
