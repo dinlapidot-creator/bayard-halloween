@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bayard After Dark – The Great Halloween House Showdown 2026</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root {
+    --orange: #ff6b00;
+    --gold: #ffb347;
+    --dark: #050505;
+    --card: rgba(20, 8, 8, 0.75);
+    --glass: rgba(15, 5, 5, 0.55);
+    --border: rgba(255, 107, 0, 0.35);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--dark);
+    color: #f5e6d3;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 10%, rgba(255,107,0,0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 90%, rgba(180,40,0,0.08) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  header {
+    position: relative;
+    text-align: center;
+    padding: 48px 20px 32px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, transparent 100%);
+    z-index: 10;
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.4rem, 6vw, 4.2rem);
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #ffb347 0%, #ff6b00 50%, #ff4500 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 40px rgba(255,107,0,0.4);
+    margin-bottom: 8px;
+  }
+  header .subtitle {
+    font-size: 1.15rem;
+    font-weight: 300;
+    opacity: 0.85;
+    letter-spacing: 1px;
+  }
+  #countdown {
+    margin-top: 16px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--gold);
+    background: var(--glass);
+    backdrop-filter: blur(12px);
+    display: inline-block;
+    padding: 8px 20px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+  }
+  nav {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-wrap: wrap;
+  }
+  nav button {
+    background: transparent;
+    color: #f5e6d3;
+    border: 1px solid var(--border);
+    padding: 10px 20px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 500;
+    font-family: inherit;
+    transition: all 0.25s ease;
+  }
+  nav button:hover, nav button.active {
+    background: var(--orange);
+    color: #000;
+    border-color: var(--orange);
+    box-shadow: 0 0 20px rgba(255,107,0,0.5);
+  }
+  #map {
+    height: 55vh;
+    width: 100%;
+  }
+  .carousel-section {
+    background: var(--card);
+    backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border);
+    padding: 24px 16px 40px;
+    position: relative;
+    z-index: 5;
+  }
+  .carousel-header {
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .carousel-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    background: linear-gradient(90deg, var(--gold), var(--orange));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .carousel-header p { opacity: 0.75; margin-top: 4px; }
+  .main-carousel {
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+  }
+  .carousel-main-img {
+    width: 100%;
+    height: 420px;
+    object-fit: cover;
+    border-radius: 16px;
+    cursor: pointer;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+    border: 1px solid var(--border);
+  }
+  .carousel-thumbs {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    justify-content: center;
+  }
+  .carousel-thumbs img {
+    width: 80px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+  }
+  .carousel-thumbs img.active, .carousel-thumbs img:hover {
+    border-color: var(--orange);
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  .carousel-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    border: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    font-size: 1.4rem;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: background 0.2s;
+  }
+  .carousel-nav:hover { background: var(--orange); color: #000; }
+  .carousel-nav.prev { left: 12px; }
+  .carousel-nav.next { right: 12px; }
+  .house-title {
+    text-align: center;
+    margin-top: 12px;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--gold);
+  }
+  .ghost {
+    position: absolute;
+    bottom: 24px;
+    left: 20px;
+    z-index: 1000;
+    font-size: 52px;
+    animation: float 4s ease-in-out infinite;
+    pointer-events: none;
+    filter: drop-shadow(0 0 12px rgba(255,255,255,0.6));
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(-5deg); }
+    50% { transform: translateY(-18px) rotate(5deg); }
+  }
+  .panel {
+    max-width: 960px;
+    margin: 32px auto;
+    padding: 32px;
+    background: var(--card);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    position: relative;
+    z-index: 5;
+  }
+  .panel h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    margin-bottom: 8px;
+    background: linear-gradient(90deg, var(--gold), var(--orange));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .tracker {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin: 20px 0;
+  }
+  .cat {
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+  }
+  .cat:hover { transform: translateY(-2px); border-color: var(--orange); }
+  .cat.done {
+    background: rgba(76, 175, 80, 0.15);
+    border-color: #4caf50;
+    color: #a5d6a7;
+  }
+  .cat.pending { border-color: var(--orange); }
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .gallery img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    border: 2px solid transparent;
+  }
+  .gallery img:hover {
+    transform: scale(1.04);
+    box-shadow: 0 8px 24px rgba(255,107,0,0.3);
+    border-color: var(--orange);
+  }
+  #lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.94);
+    z-index: 3000;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    backdrop-filter: blur(8px);
+  }
+  #lightbox img {
+    max-width: 90vw;
+    max-height: 78vh;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+  }
+  #lightbox .nav { margin-top: 16px; display: flex; gap: 10px; }
+  .btn {
+    background: linear-gradient(135deg, var(--orange), #ff4500);
+    color: #000;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 16px rgba(255,107,0,0.35);
+  }
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(255,107,0,0.5);
+  }
+  .btn.secondary {
+    background: transparent;
+    color: #f5e6d3;
+    border: 1px solid var(--border);
+    box-shadow: none;
+  }
+  input, select {
+    width: 100%;
+    padding: 14px 16px;
+    margin: 8px 0;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(0,0,0,0.4);
+    color: #fff;
+    font-family: inherit;
+    font-size: 1rem;
+  }
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(255,107,0,0.2);
+  }
+  .house-label {
+    background: linear-gradient(135deg, var(--orange), #ff4500);
+    color: #000;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 11px;
+    text-align: center;
+    width: 36px;
+    height: 36px;
+    line-height: 32px;
+    box-shadow: 0 0 12px var(--orange);
+  }
+  .leaflet-popup-content-wrapper {
+    background: var(--card) !important;
+    color: #f5e6d3 !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 14px !important;
+    backdrop-filter: blur(12px);
+  }
+  .results .item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0;
+  }
+  .bar-wrap {
+    flex: 1;
+    height: 22px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--orange), var(--gold));
+    border-radius: 999px;
+    transition: width 0.6s ease;
+  }
+  .closed {
+    text-align: center;
+    font-size: 1.6rem;
+    color: var(--gold);
+    padding: 60px 20px;
+    font-family: 'Playfair Display', serif;
+  }
+  .thanks {
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .thanks h2 { font-size: 2.4rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Bayard After Dark</h1>
+  <div class="subtitle">The Great Halloween House Showdown 2026</div>
+  <div id="countdown">Voting closes November 7 at midnight ET</div>
+</header>
+<nav>
+  <button class="active" onclick="showSection('map', this)">Map</button>
+  <button onclick="showSection('vote', this)">Vote</button>
+  <button onclick="showSection('results', this)">Results</button>
+  <button onclick="showSection('admin', this)">Admin</button>
+</nav>
+<div id="map-section">
+  <div class="carousel-section">
+    <div class="carousel-header">
+      <h2 id="carousel-house-title">Select a house on the map</h2>
+      <p>Click any pin to view its photos • Tap image for full screen</p>
+    </div>
+    <div class="main-carousel">
+      <img id="carousel-main" class="carousel-main-img" src="" alt="House photo" onclick="openCurrentLightbox()">
+      <button class="carousel-nav prev" onclick="carouselPrev()">‹</button>
+      <button class="carousel-nav next" onclick="carouselNext()">›</button>
+    </div>
+    <div class="carousel-thumbs" id="carousel-thumbs"></div>
+  </div>
+  <div id="map"></div>
+  <div class="ghost">👻</div>
+</div>
+<div id="vote-section" class="panel" style="display:none;">
+  <div id="auth">
+    <h2>Cast Your Votes</h2>
+    <p style="margin-bottom:16px; opacity:0.8;">Each household may submit two votes using two different emails.</p>
+    <input id="email" type="email" placeholder="Your email address">
+    <input id="password" type="password" placeholder="Create or enter your password">
+    <button class="btn" onclick="login()">Continue to Vote</button>
+    <p style="font-size:0.85rem; opacity:0.6; margin-top:12px;">Votes are stored securely. Password is only used for this contest.</p>
+  </div>
+  <div id="tracker-area" style="display:none;">
+    <h2>Your Ballot <span id="user-email" style="font-size:1rem; opacity:0.7;"></span></h2>
+    <p style="margin:8px 0 16px; opacity:0.8;">Select a category, then choose a house. You can change your mind before submitting.</p>
+    <div class="tracker" id="tracker"></div>
+    <div id="house-select" style="display:none; margin-top:20px;">
+      <h3 id="voting-for" style="margin-bottom:12px;"></h3>
+      <select id="house-dropdown"></select>
+      <button class="btn" onclick="assignVote()" style="margin-top:12px;">Assign This House</button>
+    </div>
+    <div id="summary" style="display:none; margin-top:28px;">
+      <h3 style="margin-bottom:12px;">Review & Submit</h3>
+      <div id="summary-list" style="margin-bottom:16px;"></div>
+      <button class="btn" onclick="submitVotes()">Submit My Votes</button>
+    </div>
+    <div id="thanks" class="thanks" style="display:none;">
+      <h2>Thank You!</h2>
+      <p style="margin:12px 0 20px; opacity:0.85;">Your votes have been recorded.</p>
+      <button class="btn" onclick="shareBadge()">Share I Voted</button>
+    </div>
+  </div>
+</div>
+<div id="results-section" class="panel" style="display:none;">
+  <h2>Live Results</h2>
+  <div id="public-results" style="margin-top:20px;"></div>
+</div>
+<div id="admin-section" class="panel" style="display:none;">
+  <h2>Admin Dashboard</h2>
+  <input id="admin-pass" type="password" placeholder="Admin password">
+  <button class="btn" onclick="adminLogin()" style="margin-top:12px;">Enter</button>
+  <div id="admin-content" style="display:none; margin-top:24px;">
+    <div id="admin-results" class="results"></div>
+    <button class="btn secondary" onclick="exportVotes()" style="margin-top:16px;">Export Votes</button>
+  </div>
+</div>
+<div id="lightbox">
+  <img id="lb-img" src="">
+  <div class="nav">
+    <button class="btn secondary" onclick="lbPrev()">← Prev</button>
+    <button class="btn secondary" onclick="lbNext()">Next →</button>
+    <button class="btn" onclick="closeLightbox()">Close</button>
+  </div>
+</div>
+<script>
+// === CONFIG ===
+// Replace with your Google Apps Script Web App URL after setup
+const SCRIPT_URL = "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
+const ADMIN_PASSWORD = "bayard2026";
+const CATEGORIES = [
+  "Best Overall Display",
+  "Best Lighting",
+  "Most Creative",
+  "Best Yard",
+  "Best Porch",
+  "Best Theme",
+  "Scariest",
+  "Funniest",
+  "Best Use of Inflatables",
+  "People's Choice"
+];
+const HOUSES = [
+  {num:"5017", lat:34.0074842, lon:-84.2096983, photos:["IMG_1275.jpg","IMG_1276.jpg","IMG_1277.jpg","IMG_1278.jpg","IMG_1279.jpg","IMG_1280.jpg","IMG_1281.jpg","IMG_1282.jpg"]},
+  {num:"5018", lat:34.0076564, lon:-84.2102729, photos:["IMG_1283.jpg","IMG_1284.jpg","IMG_1285.jpg","IMG_1286.jpg","IMG_1287.jpg","IMG_1288.jpg","IMG_1289.jpg","IMG_1290.jpg"]},
+  {num:"5024", lat:34.0075810, lon:-84.2107710, photos:["IMG_1292.jpg","IMG_1293.jpg"]},
+  {num:"5030", lat:34.0075579, lon:-84.2110019, photos:["IMG_1294.jpg","IMG_1295.jpg","IMG_1296.jpg","IMG_1297.jpg","IMG_1298.jpg","IMG_1299.jpg","IMG_1300.jpg"]},
+  {num:"5041", lat:34.0074769, lon:-84.2103361, photos:["IMG_1268.jpg","IMG_1269.jpg","IMG_1270.jpg","IMG_1271.jpg","IMG_1272.jpg","IMG_1273.jpg"]},
+  {num:"5047", lat:34.0074190, lon:-84.2107350, photos:["IMG_1263.jpg","IMG_1264.jpg","IMG_1265.jpg","IMG_1266.jpg","IMG_1267.jpg"]},
+  {num:"5096", lat:34.0061646, lon:-84.2128950, photos:["IMG_1301.jpg","IMG_1302.jpg","IMG_1303.jpg"]},
+  {num:"5101", lat:34.0064146, lon:-84.2127376, photos:["IMG_1304.jpg","IMG_1312.jpg","IMG_1309.jpg","IMG_1310.jpg","IMG_1311.jpg"]},
+  {num:"5137", lat:34.0058448, lon:-84.2116320, photos:["IMG_1197.jpg","IMG_1198.jpg","IMG_1199.jpg","IMG_1200.jpg","IMG_1203.jpg","IMG_1204.jpg","IMG_1205.jpg"]},
+  {num:"5149", lat:34.0056777, lon:-84.2111336, photos:["IMG_1189.jpg","IMG_1190.jpg","IMG_1191.jpg","IMG_1192.jpg","IMG_1193.jpg","IMG_1194.jpg","IMG_1195.jpg","IMG_1196.jpg"]},
+  {num:"5155", lat:34.0055917, lon:-84.2108850, photos:["IMG_1186.jpg","IMG_1187.jpg","IMG_1188.jpg"]},
+  {num:"5162", lat:34.0051431, lon:-84.2105100, photos:["IMG_1160.jpg","IMG_1162.jpg","IMG_1163.jpg","IMG_1164.jpg"]},
+  {num:"5167", lat:34.0053152, lon:-84.2104382, photos:["IMG_1165.jpg","IMG_1166.jpg","IMG_1167.jpg","IMG_1168.jpg","IMG_1169.jpg"]},
+  {num:"5185", lat:34.0050588, lon:-84.2097010, photos:["IMG_1178.jpg","IMG_1179.jpg","IMG_1180.jpg","IMG_1181.jpg","IMG_1182.jpg","IMG_1183.jpg","IMG_1184.jpg"]},
+  {num:"5191", lat:34.0048520, lon:-84.2095510, photos:["IMG_1171.jpg","IMG_1172.jpg","IMG_1173.jpg","IMG_1175.jpg","IMG_1176.jpg","IMG_1177.jpg"]},
+  {num:"9130", lat:34.0065250, lon:-84.2128532, photos:["IMG_1313.jpg","IMG_1314.jpg","IMG_1315.jpg","IMG_1316.jpg","IMG_1317.jpg"]}
+];
+const DEADLINE = new Date("2026-11-07T00:00:00-05:00");
+let currentCarouselHouse = null;
+let carouselIndex = 0;
+function selectHouseOnMap(num) {
+  const h = HOUSES.find(x => x.num === num);
+  if (!h || !h.photos.length) {
+    document.getElementById('carousel-house-title').textContent = num + " Dinant Dr — photos coming soon";
+    document.getElementById('carousel-main').src = "";
+    document.getElementById('carousel-thumbs').innerHTML = "";
+    return;
+  }
+  currentCarouselHouse = h;
+  carouselIndex = 0;
+  updateCarousel();
+  // Highlight the marker somehow if needed
+}
+function updateCarousel() {
+  if (!currentCarouselHouse) return;
+  const photos = currentCarouselHouse.photos;
+  document.getElementById('carousel-house-title').textContent = currentCarouselHouse.num + " Dinant Dr";
+  document.getElementById('carousel-main').src = photos[carouselIndex];
+  const thumbs = document.getElementById('carousel-thumbs');
+  thumbs.innerHTML = photos.map((p, i) =>
+    `<img src="${p}" class="${i===carouselIndex?'active':''}" onclick="carouselIndex=${i}; updateCarousel();">`
+  ).join('');
+}
+function carouselNext() {
+  if (!currentCarouselHouse) return;
+  carouselIndex = (carouselIndex + 1) % currentCarouselHouse.photos.length;
+  updateCarousel();
+}
+function carouselPrev() {
+  if (!currentCarouselHouse) return;
+  carouselIndex = (carouselIndex - 1 + currentCarouselHouse.photos.length) % currentCarouselHouse.photos.length;
+  updateCarousel();
+}
+function openCurrentLightbox() {
+  if (currentCarouselHouse) {
+    lbPhotos = currentCarouselHouse.photos;
+    lbIndex = carouselIndex;
+    showLightbox();
+  }
+}
+const map = L.map('map', {zoomControl: true}).setView([34.0063, -84.2112], 16);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap',
+  maxZoom: 19
+}).addTo(map);
+const bounds = [];
+HOUSES.forEach(h => {
+  const icon = L.divIcon({className:'house-label', html:h.num, iconSize:[36,36], iconAnchor:[18,18]});
+  const m = L.marker([h.lat, h.lon], {icon}).addTo(map);
+  m.bindPopup(`<b style="font-size:1.1rem;">${h.num} Dinant Dr</b><br><br><button class="btn" onclick="openGallery('${h.num}')">Full Gallery</button>`);
+  m.on('click', () => {
+    selectHouseOnMap(h.num);
+    if (currentCat) selectHouse(h.num);
+  });
+  bounds.push([h.lat, h.lon]);
+});
+map.fitBounds(bounds, {padding:[40,40]});
+// Auto-select first house with photos on load
+const firstWithPhotos = HOUSES.find(h => h.photos.length);
+if (firstWithPhotos) selectHouseOnMap(firstWithPhotos.num);
+function showSection(name, btn) {
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('map-section').style.display = name==='map' ? 'block' : 'none';
+  document.getElementById('vote-section').style.display = name==='vote' ? 'block' : 'none';
+  document.getElementById('results-section').style.display = name==='results' ? 'block' : 'none';
+  document.getElementById('admin-section').style.display = name==='admin' ? 'block' : 'none';
+  if (name==='results') loadAndRenderResults();
+}
+function updateCountdown() {
+  const now = new Date();
+  if (now > DEADLINE) {
+    document.getElementById('countdown').textContent = "Voting is closed";
+    return;
+  }
+  const diff = DEADLINE - now;
+  const d = Math.floor(diff/86400000);
+  const h = Math.floor((diff%86400000)/3600000);
+  const m = Math.floor((diff%3600000)/60000);
+  document.getElementById('countdown').textContent = `${d} days ${h} hours ${m} minutes remaining`;
+}
+setInterval(updateCountdown, 30000);
+updateCountdown();
+async function login() {
+  const email = document.getElementById('email').value.trim().toLowerCase();
+  const pass = document.getElementById('password').value;
+  if (!email || !pass) return alert("Please enter email and password");
+  // For demo / until Sheets is connected, use localStorage
+  // Once SCRIPT_URL is set, replace this with a fetch to the sheet
+  let stored = JSON.parse(localStorage.getItem("bayardVotes") || "{}");
+  if (!stored[email]) stored[email] = {password: pass, votes: {}};
+  else if (stored[email].password !== pass) return alert("Incorrect password");
+  currentUser = email;
+  votes = stored;
+  document.getElementById('auth').style.display = 'none';
+  document.getElementById('tracker-area').style.display = 'block';
+  document.getElementById('user-email').textContent = "— " + email;
+  renderTracker();
+  localStorage.setItem("bayardVotes", JSON.stringify(votes));
+}
+function renderTracker() {
+  const el = document.getElementById('tracker');
+  el.innerHTML = '';
+  const userVotes = (votes[currentUser] || {}).votes || {};
+  CATEGORIES.forEach(cat => {
+    const done = !!userVotes[cat];
+    const div = document.createElement('div');
+    div.className = 'cat ' + (done ? 'done' : 'pending');
+    div.innerHTML = `${cat}${done ? ' ✓' : ''}`;
+    div.onclick = () => startVote(cat);
+    el.appendChild(div);
+  });
+  const allDone = CATEGORIES.every(c => userVotes[c]);
+  document.getElementById('summary').style.display = allDone ? 'block' : 'none';
+  if (allDone) renderSummary();
+}
+function startVote(cat) {
+  currentCat = cat;
+  document.getElementById('voting-for').textContent = "Voting for: " + cat;
+  document.getElementById('house-select').style.display = 'block';
+  const sel = document.getElementById('house-dropdown');
+  sel.innerHTML = '<option value="">Select a house…</option>' + HOUSES.map(h => `<option value="${h.num}">${h.num} Dinant Dr</option>`).join('');
+}
+function selectHouse(num) {
+  if (!currentCat || !currentUser) return;
+  if (!votes[currentUser]) votes[currentUser] = {votes:{}};
+  votes[currentUser].votes[currentCat] = num;
+  localStorage.setItem("bayardVotes", JSON.stringify(votes));
+  currentCat = null;
+  document.getElementById('house-select').style.display = 'none';
+  renderTracker();
+}
+function assignVote() {
+  const num = document.getElementById('house-dropdown').value;
+  if (num) selectHouse(num);
+}
+function renderSummary() {
+  const el = document.getElementById('summary-list');
+  const uv = votes[currentUser].votes || {};
+  el.innerHTML = CATEGORIES.map(c => `<div style="margin:6px 0;"><strong>${c}</strong>: ${uv[c] || '—'} Dinant Dr</div>`).join('');
+}
+async function submitVotes() {
+  // When SCRIPT_URL is set, POST the votes here
+  // Example:
+  // await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({email:currentUser, votes:votes[currentUser].votes}) });
+  document.getElementById('summary').style.display = 'none';
+  document.getElementById('thanks').style.display = 'block';
+  localStorage.setItem("bayardVotes", JSON.stringify(votes));
+}
+function shareBadge() {
+  const text = "I just voted in Bayard After Dark – The Great Halloween House Showdown 2026! #BayardHalloween";
+  if (navigator.share) navigator.share({text});
+  else alert(text);
+}
+function openGallery(num) {
+  const h = HOUSES.find(x => x.num === num);
+  if (!h || !h.photos.length) return alert("Photos for this house are coming soon");
+  lbPhotos = h.photos;
+  lbIndex = 0;
+  showLightbox();
+}
+function showLightbox() {
+  document.getElementById('lb-img').src = lbPhotos[lbIndex];
+  document.getElementById('lightbox').style.display = 'flex';
+}
+function lbNext() { lbIndex = (lbIndex+1)%lbPhotos.length; showLightbox(); }
+function lbPrev() { lbIndex = (lbIndex-1+lbPhotos.length)%lbPhotos.length; showLightbox(); }
+function closeLightbox() { document.getElementById('lightbox').style.display = 'none'; }
+async function loadAndRenderResults() {
+  // Once connected to Sheets, fetch live data here
+  const stored = JSON.parse(localStorage.getItem("bayardVotes") || "{}");
+  const totals = {};
+  CATEGORIES.forEach(c => totals[c] = {});
+  Object.values(stored).forEach(u => {
+    Object.entries(u.votes || {}).forEach(([cat, house]) => {
+      totals[cat][house] = (totals[cat][house] || 0) + 1;
+    });
+  });
+  let html = '';
+  CATEGORIES.forEach(cat => {
+    const entries = Object.entries(totals[cat]).sort((a,b)=>b[1]-a[1]);
+    html += `<h3 style="margin:24px 0 12px; font-family:'Playfair Display',serif;">${cat}</h3>`;
+    if (!entries.length) html += '<p style="opacity:0.6;">No votes yet</p>';
+    else {
+      const max = Math.max(...entries.map(e=>e[1]), 1);
+      entries.forEach(([house, count]) => {
+        html += `<div class="item"><span style="width:80px; font-weight:600;">${house}</span><div class="bar-wrap"><div class="bar" style="width:${(count/max)*100}%"></div></div><span>${count}</span></div>`;
+      });
+    }
+  });
+  document.getElementById('public-results').innerHTML = html;
+}
+function adminLogin() {
+  if (document.getElementById('admin-pass').value === ADMIN_PASSWORD) {
+    document.getElementById('admin-content').style.display = 'block';
+    loadAndRenderResults();
+    document.getElementById('admin-results').innerHTML = document.getElementById('public-results').innerHTML;
+  } else alert("Incorrect password");
+}
+function exportVotes() {
+  const blob = new Blob([JSON.stringify(JSON.parse(localStorage.getItem("bayardVotes")||"{}"), null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'bayard-votes.json';
+  a.click();
+}
+showSection('map');
+</script>
+</body>
+</html>
